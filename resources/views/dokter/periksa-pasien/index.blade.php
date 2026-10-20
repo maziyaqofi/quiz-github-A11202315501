@@ -50,18 +50,47 @@
                                 </td>
 
                                 <td class="px-6 py-4 text-right">
-                                    @if($daftar->periksas->isNotEmpty())
+
+                                    @if($daftar->status_antrian === 'selesai' || $daftar->periksas->isNotEmpty())
+
+                                        {{-- Examination completed --}}
                                         <span class="badge badge-success badge-outline">
                                             <i class="fas fa-check-circle mr-1"></i>
                                             Sudah Diperiksa
                                         </span>
-                                    @else
+
+                                    @elseif($daftar->status_antrian === 'dilayani')
+
+                                        {{-- Patient is currently being served --}}
                                         <a href="{{ route('periksa-pasien.create', $daftar->id) }}"
-                                           class="btn btn-sm bg-[#2d4499] hover:bg-[#1e2d6b] text-white border-none rounded-lg px-4">
+                                        class="btn btn-sm bg-[#2d4499] hover:bg-[#1e2d6b] text-white border-none rounded-lg px-4">
                                             <i class="fas fa-stethoscope"></i>
                                             Periksa
                                         </a>
+
+                                    @elseif($daftar->status_antrian === 'menunggu')
+
+                                        {{-- Start serving the patient --}}
+                                        <form action="{{ route('periksa-pasien.mulai-layani', $daftar->id) }}"
+                                            method="POST"
+                                            class="inline-block">
+                                            @csrf
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-warning rounded-lg px-4">
+                                                <i class="fas fa-play mr-1"></i>
+                                                Mulai Layani
+                                            </button>
+                                        </form>
+
+                                    @else
+
+                                        <span class="badge badge-ghost">
+                                            Status Tidak Dikenal
+                                        </span>
+
                                     @endif
+
                                 </td>
 
                             </tr>

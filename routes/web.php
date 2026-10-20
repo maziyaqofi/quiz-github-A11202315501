@@ -11,6 +11,8 @@ use App\Http\Controllers\Dokter\JadwalPeriksaController;
 use App\Http\Controllers\Dokter\PeriksaPasienController;
 use App\Http\Controllers\Pasien\PoliController;
 use App\Http\Controllers\Dokter\RiwayatPasienController;
+use App\Http\Controllers\Pasien\RiwayatPendaftaranController;
+use App\Http\Controllers\Pasien\DashboardController;
 
 // Halaman utama
 Route::get('/', function () {
@@ -51,19 +53,26 @@ Route::middleware(['auth', 'role:dokter'])->prefix('dokter')->group(function () 
 
     Route::get('/riwayat-pasien', [RiwayatPasienController::class, 'index'])->name('riwayat-pasien.index');
     Route::get('/riwayat-pasien/{id}', [RiwayatPasienController::class, 'show'])->name('riwayat-pasien.show');
+    Route::post('/periksa-pasien/{id}/mulai-layani', [PeriksaPasienController::class, 'mulaiLayani'])
+        ->name('periksa-pasien.mulai-layani');
 });
 
 // Pasien Routes
 Route::middleware(['auth', 'role:pasien'])->prefix('pasien')->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('pasien.dashboard');
-    })->name('pasien.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('pasien.dashboard');
 
     Route::get('/daftar', [PoliController::class, 'get'])
         ->name('pasien.daftar');
 
     Route::post('/daftar', [PoliController::class, 'submit'])
         ->name('pasien.daftar.submit');
+
+    Route::get('/riwayat-pendaftaran', [RiwayatPendaftaranController::class, 'index'])
+        ->name('pasien.riwayat-pendaftaran.index');
+
+    Route::get('/riwayat-pendaftaran/{id}', [RiwayatPendaftaranController::class, 'show'])
+        ->name('pasien.riwayat-pendaftaran.show');
 
 });

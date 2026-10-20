@@ -12,8 +12,17 @@ class DaftarPoli extends Model
         'id_pasien',
         'id_jadwal',
         'keluhan',
-        'no_antrian'
+        'no_antrian',
+        'tanggal_kunjungan',
+        'status_antrian',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tanggal_kunjungan' => 'date',
+        ];
+    }
 
     public function pasien()
     {

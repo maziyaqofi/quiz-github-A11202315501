@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\JadwalPeriksa;
 
 class PeriksaPasienController extends Controller
 {
@@ -34,6 +35,69 @@ class PeriksaPasienController extends Controller
         return view('dokter.periksa-pasien.create', compact('obats', 'id'));
     }
 
+    public function mulaiLayani($id)
+    {
+        DB::transaction(function () use ($id) {
+
+            // Find the registration and verify doctor ownership
+            $pendaftaran = DaftarPoli::with('jadwalPeriksa')
+                ->findOrFail($id);
+
+            abort_unless(
+                (int) $pendaftaran->jadwalPeriksa->id_dokter === (int) Auth::id(),
+                403
+            );
+
+            // Lock the schedule to prevent concurrent queue starts
+            JadwalPeriksa::whereKey($pendaftaran->id_jadwal)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Refresh registration data inside the transaction
+            $pendaftaran = DaftarPoli::whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($pendaftaran->status_antrian !== 'menunggu') {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Antrian ini tidak dalam status menunggu.',
+                ]);
+            }
+
+            // Only allow service on the scheduled visit date
+            if (
+                $pendaftaran->tanggal_kunjungan === null ||
+                !$pendaftaran->tanggal_kunjungan->isToday()
+            ) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Pasien hanya dapat dilayani pada tanggal kunjungannya.',
+                ]);
+            }
+
+            // Prevent serving two patients on the same schedule and date
+            $sedangDilayani = DaftarPoli::where('id_jadwal', $pendaftaran->id_jadwal)
+                ->where('tanggal_kunjungan', $pendaftaran->tanggal_kunjungan)
+                ->where('status_antrian', 'dilayani')
+                ->exists();
+
+            if ($sedangDilayani) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Masih ada pasien yang sedang dilayani pada jadwal ini.',
+                ]);
+            }
+
+            // Update queue status
+            $pendaftaran->update([
+                'status_antrian' => 'dilayani',
+            ]);
+
+        }, 3);
+
+        return redirect()
+            ->route('periksa-pasien.index')
+            ->with('message', 'Pasien mulai dilayani.')
+            ->with('type', 'success');
+    }
     
     public function store(Request $request)
     {
@@ -113,6 +177,12 @@ class PeriksaPasienController extends Controller
                     'id_obat' => $obat->id,
                 ]);
             }
+
+            // Mark the patient's queue as completed
+            $daftarPoli->update([
+                'status_antrian' => 'selesai',
+            ]);
+
         });
 
         return redirect()

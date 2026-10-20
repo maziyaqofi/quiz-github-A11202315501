@@ -106,6 +106,13 @@
                 Pendaftaran Periksa
             </a>
 
+            <a href="{{ route('pasien.riwayat-pendaftaran.index') }}"
+            class="{{ request()->routeIs('pasien.riwayat-pendaftaran.*') ? $active : $inactive }} {{ $baseLink }}">
+
+                <i class="fas fa-history w-5 text-center"></i>
+
+                <span>Riwayat Pendaftaran</span>
+            </a>
 
         </div>
         @endif
