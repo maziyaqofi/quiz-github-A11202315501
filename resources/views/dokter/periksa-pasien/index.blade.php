@@ -11,6 +11,23 @@
         </p>
     </div>
 
+    {{-- Validation Error Alert --}}
+    @if($errors->any())
+        <div role="alert" class="alert alert-error mb-6 rounded-xl">
+            <i class="fas fa-exclamation-circle"></i>
+
+            <div>
+                <h3 class="font-bold">
+                    Tindakan Tidak Dapat Dilakukan
+                </h3>
+
+                @foreach($errors->all() as $error)
+                    <p class="text-sm">{{ $error }}</p>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Tabel Daftar Pasien --}}
     <div class="card bg-base-100 shadow-md rounded-2xl border border-slate-200 overflow-hidden">
         <div class="card-body p-0">

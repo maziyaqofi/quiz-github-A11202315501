@@ -62,6 +62,10 @@ Route::middleware(['auth', 'role:pasien'])->prefix('pasien')->group(function () 
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('pasien.dashboard');
+    
+    // Provide current queue data for real-time dashboard updates
+    Route::get('/dashboard/queue-status', [DashboardController::class, 'queueStatus'])
+        ->name('dashboard.queue-status');
 
     Route::get('/daftar', [PoliController::class, 'get'])
         ->name('pasien.daftar');

@@ -1,4 +1,3 @@
-
 <x-layouts.app title="Dashboard Pasien">
 
     {{-- Page Header --}}
@@ -13,7 +12,8 @@
 
     {{-- Active Queue Banner --}}
     @if($antrianAktif)
-        <div class="card bg-base-100 shadow-md rounded-2xl border border-blue-200 mb-8">
+        <div id="active-queue-banner"
+            class="card bg-base-100 shadow-md rounded-2xl border border-blue-200 mb-8">
             <div class="card-body">
 
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -22,7 +22,8 @@
                         Antrian Aktif Anda
                     </h3>
 
-                    <span class="badge {{ $antrianAktif->status_antrian === 'dilayani' ? 'badge-success' : 'badge-warning' }}">
+                    <span id="queue-status-badge"
+                    class="badge {{ $antrianAktif->status_antrian === 'dilayani' ? 'badge-success' : 'badge-warning' }}">
                         {{ $antrianAktif->status_antrian === 'dilayani' ? 'Sedang Dilayani' : 'Menunggu' }}
                     </span>
                 </div>
@@ -77,7 +78,8 @@
                         <p class="text-sm font-medium text-emerald-700 mb-2">
                             Nomor Sedang Dilayani
                         </p>
-                        <p class="text-4xl font-extrabold text-emerald-700">
+                        <p id="current-queue-number"
+                        class="text-4xl font-extrabold text-emerald-700">
                             {{ $nomorSedangDilayani ?? '-' }}
                         </p>
                     </div>
@@ -107,6 +109,7 @@
 
                     <thead class="bg-slate-100 text-slate-500 text-xs uppercase">
                         <tr>
+                            <th class="px-6 py-4">No</th>
                             <th class="px-6 py-4">Poli</th>
                             <th class="px-6 py-4">Dokter</th>
                             <th class="px-6 py-4">Jadwal</th>
@@ -119,6 +122,10 @@
                     <tbody>
                         @forelse($jadwals as $jadwal)
                             <tr class="hover:bg-slate-50">
+
+                                <td class="px-6 py-4">
+                                    {{ $loop->iteration }}
+                                </td>
 
                                 <td class="px-6 py-4 font-semibold">
                                     {{ $jadwal->dokter?->poli?->nama_poli ?? '-' }}
@@ -135,7 +142,8 @@
                                     {{ $jadwal->jam_selesai }}
                                 </td>
 
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center"
+                                    data-queue-schedule="{{ $jadwal->id }}">
                                     @php
                                         $sedangDilayani = $jadwal->daftarPolis->first();
                                     @endphp
@@ -154,7 +162,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center py-12 text-slate-400">
+                                <td colspan="5" class="text-center py-12 text-slate-400">
                                     Belum ada jadwal pemeriksaan.
                                 </td>
                             </tr>
@@ -166,5 +174,96 @@
 
         </div>
     </div>
+
+    {{-- Real-time Queue Listener --}}
+    <script type="module">
+        const echo = window.Echo;
+        const queueStatusUrl = @json(route('dashboard.queue-status'));
+
+        // Fetch the latest queue data from Laravel
+        async function refreshQueueStatus() {
+            try {
+                const response = await fetch(queueStatusUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Hide the active queue banner when the examination is completed
+                const activeQueueBanner = document.getElementById('active-queue-banner');
+
+                if (activeQueueBanner && !data.antrian_aktif) {
+                    activeQueueBanner.remove();
+                }
+
+                // Update the patient's active queue status
+                const statusBadge = document.getElementById('queue-status-badge');
+
+                if (statusBadge && data.antrian_aktif) {
+                    const isServing = data.antrian_aktif.status === 'dilayani';
+
+                    statusBadge.textContent = isServing
+                        ? 'Sedang Dilayani'
+                        : 'Menunggu';
+
+                    statusBadge.classList.toggle('badge-success', isServing);
+                    statusBadge.classList.toggle('badge-warning', !isServing);
+                }
+
+                // Update the currently served queue number
+                const currentQueueNumber = document.getElementById('current-queue-number');
+
+                if (currentQueueNumber) {
+                    currentQueueNumber.textContent =
+                        data.nomor_sedang_dilayani ?? '-';
+                }
+
+                // Update queue monitoring for every schedule
+                document.querySelectorAll('[data-queue-schedule]').forEach((cell) => {
+                    const scheduleId = cell.dataset.queueSchedule;
+                    const queueNumber = data.antrian_dilayani[scheduleId];
+
+                    cell.replaceChildren();
+
+                    const span = document.createElement('span');
+
+                    if (queueNumber !== undefined && queueNumber !== null) {
+                        span.className = 'badge badge-success font-bold';
+                        span.textContent = queueNumber;
+                    } else {
+                        span.className = 'text-slate-400';
+                        span.textContent = 'Belum ada';
+                    }
+
+                    cell.appendChild(span);
+                });
+
+                console.log('Queue dashboard updated:', data);
+
+            } catch (error) {
+                console.error('Failed to update queue dashboard:', error);
+            }
+        }
+
+        if (echo) {
+            echo.channel('queue-updates')
+                .listen('.QueueUpdated', (event) => {
+                    console.log('Queue updated:', event);
+
+                    refreshQueueStatus();
+                });
+        } else {
+            console.error('Laravel Echo is not available.');
+        }
+    </script>
+
 
 </x-layouts.app>
