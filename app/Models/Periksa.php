@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Pembayaran;
 
 class Periksa extends Model
 {
@@ -23,5 +24,10 @@ class Periksa extends Model
     public function detailPeriksas()
     {
         return $this->hasMany(DetailPeriksa::class, 'id_periksa');
+    }
+
+    public function pembayaran()
+    {
+        return $this->hasOne(Pembayaran::class, 'id_periksa');
     }
 }

@@ -13,7 +13,7 @@ class RiwayatPendaftaranController extends Controller
         // Retrieve registrations belonging to the logged-in patient
         $riwayatPendaftaran = DaftarPoli::with([
             'jadwalPeriksa.dokter.poli',
-            'periksas'
+            'periksas.pembayaran'
         ])
             ->where('id_pasien', Auth::id())
             ->latest('id')
@@ -30,7 +30,8 @@ class RiwayatPendaftaranController extends Controller
         // Retrieve only the logged-in patient's registration
         $pendaftaran = DaftarPoli::with([
             'jadwalPeriksa.dokter.poli',
-            'periksas.detailPeriksas.obat'
+            'periksas.detailPeriksas.obat',
+            'periksas.pembayaran'
         ])
             ->where('id_pasien', Auth::id())
             ->findOrFail($id);

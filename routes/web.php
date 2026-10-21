@@ -13,6 +13,9 @@ use App\Http\Controllers\Pasien\PoliController;
 use App\Http\Controllers\Dokter\RiwayatPasienController;
 use App\Http\Controllers\Pasien\RiwayatPendaftaranController;
 use App\Http\Controllers\Pasien\DashboardController;
+use App\Http\Controllers\Pasien\PembayaranController;
+use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
+use App\Http\Controllers\NotificationController;
 
 // Halaman utama
 Route::get('/', function () {
@@ -37,6 +40,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::resource('pasien', PasienController::class);
     Route::resource('obat', ObatController::class)->except(['show']);
 
+    // Admin payment management
+    Route::get('/pembayaran', [AdminPembayaranController::class, 'index'])
+        ->name('admin.pembayaran.index');
+
+    Route::get('/pembayaran/{id}', [AdminPembayaranController::class, 'show'])
+        ->name('admin.pembayaran.show');
+
+    Route::patch('/pembayaran/{id}/verify', [AdminPembayaranController::class, 'verify'])
+        ->name('admin.pembayaran.verify');
 });
 
 // Dokter Routes
@@ -79,4 +91,20 @@ Route::middleware(['auth', 'role:pasien'])->prefix('pasien')->group(function () 
     Route::get('/riwayat-pendaftaran/{id}', [RiwayatPendaftaranController::class, 'show'])
         ->name('pasien.riwayat-pendaftaran.show');
 
+    // Patient payment proof upload
+    Route::post('/pembayaran/{id}/upload', [PembayaranController::class, 'upload'])
+        ->name('pasien.pembayaran.upload');
+});
+
+// Notification management
+Route::middleware(['auth'])->group(function () {
+    Route::patch('/notifications/{id}/read', [
+        NotificationController::class,
+        'markAsRead'
+    ])->name('notifications.read');
+
+    Route::patch('/notifications/read-all', [
+        NotificationController::class,
+        'markAllAsRead'
+    ])->name('notifications.read-all');
 });
