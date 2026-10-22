@@ -49,10 +49,22 @@
 
                                     <td>
                                         @if ($jadwal)
-                                            {{ $jadwal->hari }},
-                                            {{ substr($jadwal->jam_mulai, 0, 5) }}
-                                            -
-                                            {{ substr($jadwal->jam_selesai, 0, 5) }}
+                                            <div class="flex flex-col gap-1">
+                                                <span class="font-semibold">
+                                                    @if ($pendaftaran->tanggal_kunjungan)
+                                                        {{ $pendaftaran->tanggal_kunjungan->format('d/m/Y') }}
+                                                    @else
+                                                        Tanggal belum tersedia
+                                                    @endif
+                                                </span>
+
+                                                <span class="text-sm text-slate-500">
+                                                    {{ $jadwal->hari }},
+                                                    {{ substr($jadwal->jam_mulai, 0, 5) }}
+                                                    -
+                                                    {{ substr($jadwal->jam_selesai, 0, 5) }}
+                                                </span>
+                                            </div>
                                         @else
                                             -
                                         @endif
@@ -77,12 +89,19 @@
                                     </td>
 
                                     <td>
-                                        <a href="{{ route('pasien.riwayat-pendaftaran.show', $pendaftaran->id) }}"
-                                           class="btn btn-sm bg-[#2d4499] hover:bg-[#1e2d6b] text-white border-none">
-                                            <i class="fas fa-eye"></i>
-                                            Detail
-                                        </a>
+                                        @if ($sudahDiperiksa)
+                                            <a href="{{ route('pasien.riwayat-pendaftaran.show', $pendaftaran->id) }}"
+                                            class="btn btn-sm bg-[#2d4499] hover:bg-[#1e2d6b] text-white border-none">
+                                                <i class="fas fa-eye"></i>
+                                                Detail
+                                            </a>
+                                        @else
+                                            <span class="text-slate-400 text-sm">
+                                                Belum tersedia
+                                            </span>
+                                        @endif
                                     </td>
+
                                 </tr>
                             @empty
                                 <tr>

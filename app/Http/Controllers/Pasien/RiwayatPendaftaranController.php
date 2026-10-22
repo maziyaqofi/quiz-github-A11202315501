@@ -36,6 +36,11 @@ class RiwayatPendaftaranController extends Controller
             ->where('id_pasien', Auth::id())
             ->findOrFail($id);
 
+            // Only completed examinations can be viewed
+            if ($pendaftaran->periksas->isEmpty()) {
+                abort(404, 'Detail pemeriksaan belum tersedia.');
+            }
+
         return view(
             'pasien.riwayat-pendaftaran.show',
             compact('pendaftaran')

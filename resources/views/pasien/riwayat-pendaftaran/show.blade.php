@@ -51,16 +51,25 @@
 
                     <div>
                         <p class="text-sm text-slate-500">Jadwal Pemeriksaan</p>
-                        <p class="font-semibold">
-                            @if($jadwal)
+
+                        @if ($jadwal)
+                            <p class="font-semibold">
+                                @if ($pendaftaran->tanggal_kunjungan)
+                                    {{ $pendaftaran->tanggal_kunjungan->format('d/m/Y') }}
+                                @else
+                                    Tanggal belum tersedia
+                                @endif
+                            </p>
+
+                            <p class="text-sm text-slate-500 mt-1">
                                 {{ $jadwal->hari }},
                                 {{ substr($jadwal->jam_mulai, 0, 5) }}
                                 -
                                 {{ substr($jadwal->jam_selesai, 0, 5) }}
-                            @else
-                                -
-                            @endif
-                        </p>
+                            </p>
+                        @else
+                            <p class="font-semibold">-</p>
+                        @endif
                     </div>
 
                     <div>
