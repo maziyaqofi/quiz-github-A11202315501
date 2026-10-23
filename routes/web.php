@@ -16,6 +16,7 @@ use App\Http\Controllers\Pasien\DashboardController;
 use App\Http\Controllers\Pasien\PembayaranController;
 use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 
 // Halaman utama
 Route::get('/', function () {
@@ -143,4 +144,17 @@ Route::middleware(['auth'])->group(function () {
         NotificationController::class,
         'markAllAsRead'
     ])->name('notifications.read-all');
+});
+
+// Profile routes for all authenticated users
+Route::middleware(['auth'])->group(function () {
+
+    // Display profile page
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    // Update authenticated user's password
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password.update');
+
 });

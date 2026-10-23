@@ -1,3 +1,18 @@
+Running Project
+---------------
 php artisan serve
 php artisan reverb:start --debug
 npm run dev
+
+Data Accounts Admin
+--------------------
+admin@gmail.com --> admin
+
+
+Data Accounts Dokter
+--------------------
+
+
+Data Accounts Pasien
+--------------------
+pasien@gmail.com --> Pasienpass2026!

@@ -3,28 +3,28 @@
     {{-- ================= BRAND ================= --}}
     <div class="px-5 py-5 border-b border-white/10">
         <div class="flex items-center gap-3">
-            <img src="{{ asset('images/logo-bengkot.png') }}" class="w-10 h-10 rounded-xl object-cover">
+            <img src="{{ asset('images/logo-bengkot.png') }}"
+                class="w-10 h-10 rounded-xl object-cover">
 
             <div>
                 <div class="font-bold text-white text-lg leading-tight">
                     Poliklinik
                 </div>
 
-                @if(request()->is('admin*'))
-                <span
-                    class="text-[10px] font-bold uppercase tracking-wider bg-indigo-400/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md">
-                    Admin
-                </span>
-                @elseif(request()->is('dokter*'))
-                <span
-                    class="text-[10px] font-bold uppercase tracking-wider bg-purple-400/20 text-purple-300 border border-purple-400/30 px-2 py-0.5 rounded-md">
-                    Dokter
-                </span>
-                @elseif(request()->is('pasien*'))
-                <span
-                    class="text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-md">
-                    Pasien
-                </span>
+                @if(auth()->user()?->role === 'admin')
+                    <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-400/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md">
+                        Admin
+                    </span>
+
+                @elseif(auth()->user()?->role === 'dokter')
+                    <span class="text-[10px] font-bold uppercase tracking-wider bg-purple-400/20 text-purple-300 border border-purple-400/30 px-2 py-0.5 rounded-md">
+                        Dokter
+                    </span>
+
+                @elseif(auth()->user()?->role === 'pasien')
+                    <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-md">
+                        Pasien
+                    </span>
                 @endif
             </div>
         </div>
@@ -42,7 +42,7 @@
 
 
         {{-- ================= ADMIN ================= --}}
-        @if(request()->is('admin*'))
+        @if(auth()->user()?->role === 'admin')
 
         <p class="text-xs font-bold uppercase tracking-widest text-indigo-400 px-3 mb-3">
             Menu Admin
@@ -92,7 +92,7 @@
 
 
         {{-- ================= PASIEN ================= --}}
-        @if(request()->is('pasien*'))
+        @if(auth()->user()?->role === 'pasien')
 
         <p class="text-xs uppercase tracking-widest text-indigo-400 px-3 mb-3 mt-6">
             Menu Pasien
@@ -132,7 +132,7 @@
 
 
         {{-- ================ DOKTER ================ --}}
-        @if(request()->is('dokter*'))
+        @if(auth()->user()?->role === 'dokter')
 
         <p class="text-xs uppercase tracking-widest text-indigo-400 px-3 mt-6">
             Menu Dokter
@@ -169,6 +169,16 @@
 
     </div>
 
+    {{-- ================= PROFILE ================= --}}
+    @auth
+        <div class="px-4 pb-3">
+            <a href="{{ route('profile.edit') }}"
+                class="{{ $baseLink }} {{ request()->routeIs('profile.*') ? $active : $inactive }}">
+                <i class="fas fa-user-circle w-4 text-center"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+    @endauth
 
     {{-- ================= LOGOUT ================= --}}
     <div class="p-4 border-t border-white/10">
