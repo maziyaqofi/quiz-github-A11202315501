@@ -1,16 +1,30 @@
 <x-layouts.app title="Jadwal Periksa">
 
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h2 class="text-2xl font-bold text-slate-800">
             Jadwal Periksa
         </h2>
 
-        <a href="{{ route('jadwal-periksa.create') }}" class="btn bg-[#2d4499] hover:bg-[#1e2d6b] 
-                  text-white border-none rounded-lg px-5">
-            <i class="fas fa-plus"></i>
-            Tambah Jadwal Periksa
-        </a>
+        <div class="flex flex-wrap items-center gap-3">
+
+            {{-- Export Excel --}}
+            <a href="{{ route('jadwal-periksa.export') }}"
+                class="btn bg-emerald-600 hover:bg-emerald-700
+                    text-white border-none rounded-lg px-5">
+                <i class="fas fa-file-excel"></i>
+                Export Excel
+            </a>
+
+            {{-- Add Examination Schedule --}}
+            <a href="{{ route('jadwal-periksa.create') }}"
+                class="btn bg-[#2d4499] hover:bg-[#1e2d6b]
+                    text-white border-none rounded-lg px-5">
+                <i class="fas fa-plus"></i>
+                Tambah Jadwal Periksa
+            </a>
+
+        </div>
     </div>
 
     {{-- Alert Flash Message --}}

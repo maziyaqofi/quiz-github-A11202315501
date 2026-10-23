@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Exports\PasienExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PasienController extends Controller
 {
@@ -13,6 +15,15 @@ class PasienController extends Controller
     {
         $pasiens = User::where('role', 'pasien')->with('poli')->get();
         return view('admin.pasien.index', compact('pasiens'));
+    }
+
+    public function export()
+    {
+        // Export all patient records to an Excel file
+        return Excel::download(
+            new PasienExport(),
+            'data_pasien.xlsx'
+        );
     }
 
     public function create()

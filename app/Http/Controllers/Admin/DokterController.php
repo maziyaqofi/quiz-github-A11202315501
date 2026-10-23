@@ -7,6 +7,8 @@ use App\Models\Poli;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Exports\DokterExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DokterController extends Controller
 {
@@ -14,6 +16,15 @@ class DokterController extends Controller
     {
         $dokters = User::where('role', 'dokter')->with('poli')->get();
         return view('admin.dokter.index', compact('dokters'));
+    }
+
+    public function export()
+    {
+        // Export all doctor records to an Excel file
+        return Excel::download(
+            new DokterExport(),
+            'data_dokter.xlsx'
+        );
     }
 
     public function create()

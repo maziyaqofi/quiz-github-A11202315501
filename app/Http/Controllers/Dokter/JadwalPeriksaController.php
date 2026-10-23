@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\JadwalPeriksa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Exports\JadwalPeriksaExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class JadwalPeriksaController extends Controller
 {
@@ -13,6 +15,15 @@ class JadwalPeriksaController extends Controller
         $dokter = Auth::user();
         $jadwalPeriksas = JadwalPeriksa::where('id_dokter', $dokter->id)->orderBy('hari')->get();
         return view('dokter.jadwal-periksa.index', compact('jadwalPeriksas'));
+    }
+
+    public function export()
+    {
+        // Export schedules belonging to the authenticated doctor
+        return Excel::download(
+            new JadwalPeriksaExport(Auth::id()),
+            'jadwal_periksa.xlsx'
+        );
     }
 
     public function create(){
@@ -39,7 +50,8 @@ class JadwalPeriksaController extends Controller
     }
 
     public function edit($id){
-        $jadwalPeriksa = JadwalPeriksa::findOrFail($id);
+        $jadwalPeriksa = JadwalPeriksa::where('id_dokter', Auth::id())
+        ->findOrFail($id);
         return view('dokter.jadwal-periksa.edit', compact('jadwalPeriksa'));
     }
 
@@ -50,7 +62,8 @@ class JadwalPeriksaController extends Controller
             'jam_selesai' => 'required'
         ]);
 
-        $jadwalPeriksa = JadwalPeriksa::findOrFail($id);
+        $jadwalPeriksa = JadwalPeriksa::where('id_dokter', Auth::id())
+        ->findOrFail($id);
         $jadwalPeriksa->update([
             'hari' => $request->hari,
             'jam_mulai' => $request->jam_mulai,
@@ -63,7 +76,8 @@ class JadwalPeriksaController extends Controller
     }
 
     public function destroy(string $id){
-        $jadwalPeriksa = JadwalPeriksa::findOrFail($id);
+        $jadwalPeriksa = JadwalPeriksa::where('id_dokter', Auth::id())
+        ->findOrFail($id);
         $jadwalPeriksa->delete();
 
         return redirect()->route('jadwal-periksa.index')

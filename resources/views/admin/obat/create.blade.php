@@ -45,7 +45,7 @@
                         <input type="text" name="kemasan" value="{{ old('kemasan') }}"
                             placeholder="Contoh: Strip, Botol, Tube..." class="w-full px-4 py-2 border-2 rounded-lg p-2
                                       focus:border-primary focus:outline-none
-                                      @error('kemasan') border-red-500 @enderror">
+                                      @error('kemasan') border-red-500 @enderror" required>
                         @error('kemasan')
                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                         @enderror
@@ -71,6 +71,31 @@
 
                     @error('harga')
                     <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Stok Obat --}}
+                <div class="mb-8">
+                    <label for="stok" class="block text-sm font-semibold text-slate-700 mb-1">
+                        Stok Obat <span class="text-red-500">*</span>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="stok"
+                        name="stok"
+                        value="{{ old('stok', 0) }}"
+                        placeholder="Masukkan jumlah stok..."
+                        min="0"
+                        step="1"
+                        class="w-full px-4 py-2 border-2 rounded-lg
+                            focus:border-primary focus:outline-none
+                            @error('stok') border-red-500 @enderror"
+                        required
+                    >
+
+                    @error('stok')
+                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 

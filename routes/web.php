@@ -36,8 +36,25 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
     Route::resource('polis', AdminPoliController::class);
+
+    // Export doctor data to Excel
+    Route::get('/dokter/export', [DokterController::class, 'export'])
+        ->name('dokter.export');
+
     Route::resource('dokter', DokterController::class);
+
+    // Export patient data to Excel
+    Route::get('/pasien/export', [PasienController::class, 'export'])
+        ->name('pasien.export');
+        
     Route::resource('pasien', PasienController::class);
+    
+    Route::resource('obat', ObatController::class)->except(['show']);
+
+    // Export medicine data to Excel
+    Route::get('/obat/export', [ObatController::class, 'export'])
+        ->name('obat.export');
+
     Route::resource('obat', ObatController::class)->except(['show']);
 
     // Admin payment management
@@ -57,14 +74,29 @@ Route::middleware(['auth', 'role:dokter'])->prefix('dokter')->group(function () 
         return view('dokter.dashboard');
     })->name('dokter.dashboard');
 
-    Route::resource('jadwal-periksa', JadwalPeriksaController::class);
+    // Export the authenticated doctor's examination schedules
+    Route::get('/jadwal-periksa/export', [JadwalPeriksaController::class, 'export'])
+        ->name('jadwal-periksa.export');
+
+    // Examination schedule CRUD
+    Route::resource('jadwal-periksa', JadwalPeriksaController::class)
+        ->except(['show']);
 
     Route::get('/periksa-pasien', [PeriksaPasienController::class, 'index'])->name('periksa-pasien.index');
     Route::post('/periksa-pasien', [PeriksaPasienController::class, 'store'])->name('periksa-pasien.store');
     Route::get('/periksa-pasien/{id}', [PeriksaPasienController::class, 'create'])->name('periksa-pasien.create');
 
-    Route::get('/riwayat-pasien', [RiwayatPasienController::class, 'index'])->name('riwayat-pasien.index');
-    Route::get('/riwayat-pasien/{id}', [RiwayatPasienController::class, 'show'])->name('riwayat-pasien.show');
+    // Export examination histories belonging to the authenticated doctor
+    Route::get('/riwayat-pasien/export', [RiwayatPasienController::class, 'export'])
+        ->name('riwayat-pasien.export');
+
+    // Examination history
+    Route::get('/riwayat-pasien', [RiwayatPasienController::class, 'index'])
+        ->name('riwayat-pasien.index');
+
+    Route::get('/riwayat-pasien/{id}', [RiwayatPasienController::class, 'show'])
+        ->name('riwayat-pasien.show');
+        
     Route::post('/periksa-pasien/{id}/mulai-layani', [PeriksaPasienController::class, 'mulaiLayani'])
         ->name('periksa-pasien.mulai-layani');
 });

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Obat;
 use Illuminate\Http\Request;
+use App\Exports\ObatExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ObatController extends Controller
 {
@@ -14,6 +16,15 @@ class ObatController extends Controller
         return view('admin.obat.index', compact('obats'));
     }
 
+    public function export()
+    {
+        // Export all medicine records, including prices and stock
+        return Excel::download(
+            new ObatExport(),
+            'data_obat.xlsx'
+        );
+    }
+    
     public function create()
     {
         return view('admin.obat.create');
@@ -21,21 +32,19 @@ class ObatController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama_obat' => 'required|string',
             'kemasan' => 'required|string',
-            'harga' => 'required|integer',
+            'harga' => 'required|integer|min:0',
+            'stok' => 'required|integer|min:0',
         ]);
 
-        Obat::create([
-            'nama_obat' => $request->nama_obat,
-            'kemasan' => $request->kemasan,
-            'harga' => $request->harga
-        ]);
+        // Save medicine information, including stock
+        Obat::create($validated);
 
         return redirect()
             ->route('obat.index')
-            ->with('message', 'Data Obat Berhasil dibuat')
+            ->with('message', 'Data Obat berhasil ditambahkan')
             ->with('type', 'success');
     }
 
@@ -46,24 +55,23 @@ class ObatController extends Controller
             'obat' => $obat
         ]);
     }
-public function update(Request $request, string $id)
+    
+    public function update(Request $request, string $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama_obat' => 'required|string',
             'kemasan' => 'nullable|string',
-            'harga' => 'required|integer',
+            'harga' => 'required|integer|min:0',
+            'stok' => 'required|integer|min:0',
         ]);
 
+        // Update medicine information and stock
         $obat = Obat::findOrFail($id);
-        $obat->update([
-            'nama_obat' => $request->nama_obat,
-            'kemasan' => $request->kemasan,
-            'harga' => $request->harga
-        ]);
+        $obat->update($validated);
 
         return redirect()
             ->route('obat.index')
-            ->with('message', 'Data Obat berhasil di edit')
+            ->with('message', 'Data Obat berhasil diperbarui')
             ->with('type', 'success');
     }
 

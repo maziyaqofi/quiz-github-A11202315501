@@ -84,12 +84,39 @@
                         value="{{ old('harga', $obat->harga) }}"
                         placeholder="Masukkan harga obat"
                         min="0"
-                        step="any"
+                        step="1"
                         class="input input-bordered w-full
                         @error('harga') input-error @enderror"
                         required>
 
                     @error('harga')
+                    <span class="text-red-500 text-sm mt-1">
+                        {{ $message }}
+                    </span>
+                    @enderror
+                </div>
+
+                {{-- Stok Obat --}}
+                <div class="form-control mb-6">
+                    <label for="stok" class="label">
+                        <span class="label-text font-semibold">
+                            Stok Obat
+                        </span>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="stok"
+                        name="stok"
+                        value="{{ old('stok', $obat->stok) }}"
+                        placeholder="Masukkan jumlah stok obat"
+                        min="0"
+                        step="1"
+                        class="input input-bordered w-full
+                        @error('stok') input-error @enderror"
+                        required>
+
+                    @error('stok')
                     <span class="text-red-500 text-sm mt-1">
                         {{ $message }}
                     </span>

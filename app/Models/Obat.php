@@ -12,6 +12,12 @@ class Obat extends Model
         'nama_obat',
         'kemasan',
         'harga',
+        'stok',
+    ];
+
+    protected $casts = [
+        'harga' => 'integer',
+        'stok' => 'integer',
     ];
 
     public function detailPeriksas()
