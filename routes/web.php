@@ -123,7 +123,11 @@ Route::middleware(['auth', 'role:pasien'])->prefix('pasien')->group(function () 
     Route::get('/riwayat-pendaftaran/{id}', [RiwayatPendaftaranController::class, 'show'])
         ->name('pasien.riwayat-pendaftaran.show');
 
-    // Patient payment proof upload
+    // Display payment bills for the authenticated patient
+    Route::get('/pembayaran', [PembayaranController::class, 'index'])
+        ->name('pasien.pembayaran.index');
+
+    // Upload payment proof
     Route::post('/pembayaran/{id}/upload', [PembayaranController::class, 'upload'])
         ->name('pasien.pembayaran.upload');
 });

@@ -1,0 +1,3 @@
+php artisan serve
+php artisan reverb:start --debug
+npm run dev

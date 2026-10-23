@@ -15,6 +15,23 @@ use App\Notifications\BuktiPembayaranUploaded;
 
 class PembayaranController extends Controller
 {
+    public function index()
+    {
+        // Retrieve completed examinations belonging to the authenticated patient
+        $tagihans = Periksa::whereHas('daftarPoli', function ($query) {
+            $query->where('id_pasien', Auth::id())
+                ->where('status_antrian', 'selesai');
+        })
+            ->with([
+                'daftarPoli.jadwalPeriksa.dokter',
+                'pembayaran',
+            ])
+            ->orderBy('tgl_periksa', 'desc')
+            ->get();
+
+        return view('pasien.pembayaran.index', compact('tagihans'));
+    }
+
     public function upload(Request $request, $id)
     {
         // Validate payment proof
