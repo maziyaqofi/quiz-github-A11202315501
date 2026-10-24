@@ -47,6 +47,28 @@
                         </tr>
                     </thead>
 
+                    @php
+                        // Determine the next eligible patient for each schedule
+                        $giliranAktif = $daftarPasien
+                            ->groupBy('id_jadwal')
+                            ->map(function ($pasienJadwal) {
+
+                                // Block new queue actions while a patient is being served
+                                if ($pasienJadwal->contains('status_antrian', 'dilayani')) {
+                                    return null;
+                                }
+
+                                // Find the earliest waiting patient
+                                return $pasienJadwal
+                                    ->where('status_antrian', 'menunggu')
+                                    ->sortBy([
+                                        ['urutan_panggil', 'asc'],
+                                        ['id', 'asc'],
+                                    ])
+                                    ->first()?->id;
+                            });
+                    @endphp
+
                     <tbody>
                         @forelse($daftarPasien as $daftar)
                             <tr class="hover:bg-slate-50 transition">
@@ -92,7 +114,7 @@
                                         <span class="badge badge-warning">
                                             Menunggu
                                         </span>
-                                    
+
                                     @elseif($daftar->status_antrian === 'dilewati')
                                         <span class="badge badge-error badge-outline">
                                             Dilewati
@@ -125,30 +147,38 @@
                                         </a>
 
                                     @elseif($daftar->status_antrian === 'menunggu')
-                                        <div class="flex justify-end gap-2">
-                                            {{-- Start serving patient --}}
-                                            <form action="{{ route('periksa-pasien.mulai-layani', $daftar->id) }}"
-                                                method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-warning rounded-lg">
-                                                    <i class="fas fa-play"></i>
-                                                    Mulai Layani
-                                                </button>
-                                            </form>
+                                        @if($giliranAktif->get($daftar->id_jadwal) === $daftar->id)
+                                            <div class="flex justify-end gap-2">
+                                                {{-- Start serving patient --}}
+                                                <form action="{{ route('periksa-pasien.mulai-layani', $daftar->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-warning rounded-lg">
+                                                        <i class="fas fa-play"></i>
+                                                        Mulai Layani
+                                                    </button>
+                                                </form>
 
-                                            {{-- Skip patient --}}
-                                            <form action="{{ route('periksa-pasien.lewati', $daftar->id) }}"
-                                                method="POST"
-                                                onsubmit="return confirm('Yakin ingin melewati antrean pasien ini?')">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline rounded-lg">
-                                                    <i class="fas fa-forward"></i>
-                                                    Lewati
-                                                </button>
-                                            </form>
-                                        </div>
+                                                {{-- Skip patient --}}
+                                                <form action="{{ route('periksa-pasien.lewati', $daftar->id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Yakin ingin melewati antrean pasien ini?')">
+                                                    @csrf
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline rounded-lg">
+                                                        <i class="fas fa-forward"></i>
+                                                        Lewati
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                    @else
+                                        <span class="badge badge-ghost">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            Menunggu Giliran
+                                        </span>
+                                    @endif
 
                                     @elseif($daftar->status_antrian === 'dilewati')
                                         {{-- Reactivate skipped patient --}}

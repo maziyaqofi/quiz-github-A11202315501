@@ -22,9 +22,18 @@
                         Antrian Aktif Anda
                     </h3>
 
+                    @php
+                        // Define queue status appearance
+                        $queueStatusConfig = match ($antrianAktif->status_antrian) {
+                            'dilayani' => ['label' => 'Sedang Dilayani', 'class' => 'badge-success'],
+                            'dilewati' => ['label' => 'Dilewati', 'class' => 'badge-error'],
+                            default => ['label' => 'Menunggu', 'class' => 'badge-warning'],
+                        };
+                    @endphp
+
                     <span id="queue-status-badge"
-                    class="badge {{ $antrianAktif->status_antrian === 'dilayani' ? 'badge-success' : 'badge-warning' }}">
-                        {{ $antrianAktif->status_antrian === 'dilayani' ? 'Sedang Dilayani' : 'Menunggu' }}
+                        class="badge {{ $queueStatusConfig['class'] }}">
+                        {{ $queueStatusConfig['label'] }}
                     </span>
                 </div>
 
@@ -63,7 +72,7 @@
 
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                     <div class="bg-blue-50 rounded-xl p-5 text-center">
                         <p class="text-sm font-medium text-blue-700 mb-2">
@@ -82,6 +91,19 @@
                         class="text-4xl font-extrabold text-emerald-700">
                             {{ $nomorSedangDilayani ?? '-' }}
                         </p>
+                    </div>
+
+                    {{-- Remaining waiting patients ahead --}}
+                    <div class="bg-amber-50 rounded-xl p-5 text-center">
+                        <p class="text-sm font-medium text-amber-700 mb-2">
+                            Sisa Antrean Sebelum Anda
+                        </p>
+
+                        <p id="remaining-queue-count"
+                        class="text-4xl font-extrabold text-amber-700">
+                            {{ $sisaAntrian ?? '-' }}
+                        </p>
+
                     </div>
 
                 </div>
@@ -208,14 +230,34 @@
                 const statusBadge = document.getElementById('queue-status-badge');
 
                 if (statusBadge && data.antrian_aktif) {
-                    const isServing = data.antrian_aktif.status === 'dilayani';
+                    const status = data.antrian_aktif.status;
 
-                    statusBadge.textContent = isServing
-                        ? 'Sedang Dilayani'
-                        : 'Menunggu';
+                    const statusConfig = {
+                        menunggu: {
+                            label: 'Menunggu',
+                            className: 'badge-warning',
+                        },
+                        dilayani: {
+                            label: 'Sedang Dilayani',
+                            className: 'badge-success',
+                        },
+                        dilewati: {
+                            label: 'Dilewati',
+                            className: 'badge-error',
+                        },
+                    };
 
-                    statusBadge.classList.toggle('badge-success', isServing);
-                    statusBadge.classList.toggle('badge-warning', !isServing);
+                    const config = statusConfig[status] ?? statusConfig.menunggu;
+
+                    statusBadge.textContent = config.label;
+
+                    statusBadge.classList.remove(
+                        'badge-success',
+                        'badge-warning',
+                        'badge-error'
+                    );
+
+                    statusBadge.classList.add(config.className);
                 }
 
                 // Update the currently served queue number
@@ -224,6 +266,13 @@
                 if (currentQueueNumber) {
                     currentQueueNumber.textContent =
                         data.nomor_sedang_dilayani ?? '-';
+                }
+
+                // Update the number of waiting patients ahead
+                const remainingQueueCount = document.getElementById('remaining-queue-count');
+
+                if (remainingQueueCount) {
+                    remainingQueueCount.textContent = data.sisa_antrian ?? '-';
                 }
 
                 // Update queue monitoring for every schedule
@@ -263,6 +312,10 @@
         } else {
             console.error('Laravel Echo is not available.');
         }
+
+        // Load the latest queue data when the dashboard opens
+        refreshQueueStatus();
+
     </script>
 
 

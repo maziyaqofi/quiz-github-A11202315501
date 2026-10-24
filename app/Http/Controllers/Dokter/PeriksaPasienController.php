@@ -38,7 +38,7 @@ class PeriksaPasienController extends Controller
         return view('dokter.periksa-pasien.index', compact('daftarPasien'));
     }
 
-    
+
     public function create($id)
     {
         // Find the patient registration
@@ -70,7 +70,7 @@ class PeriksaPasienController extends Controller
 
         return view('dokter.periksa-pasien.create', compact('obats', 'id'));
     }
-    
+
     public function mulaiLayani($id)
     {
         $antrian = DB::transaction(function () use ($id) {
@@ -189,7 +189,7 @@ class PeriksaPasienController extends Controller
 
     public function lewati($id)
     {
-        DB::transaction(function () use ($id) {
+        $antrian = DB::transaction(function () use ($id) {
 
             // Find registration and verify doctor ownership
             $pendaftaran = DaftarPoli::with('jadwalPeriksa')
@@ -276,7 +276,16 @@ class PeriksaPasienController extends Controller
                 'status_antrian' => 'dilewati',
             ]);
 
-        }, 3);
+            // Return updated registration data
+            return $pendaftaran;
+
+            }, 3);
+
+        // Broadcast queue changes after the transaction is committed
+        QueueUpdated::dispatch(
+            (int) $antrian->id_jadwal,
+            $antrian->tanggal_kunjungan->toDateString()
+        );
 
         return redirect()
             ->route('periksa-pasien.index')

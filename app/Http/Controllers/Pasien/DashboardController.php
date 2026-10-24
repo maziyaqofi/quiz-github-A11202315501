@@ -16,7 +16,7 @@ class DashboardController extends Controller
             'jadwalPeriksa.dokter.poli',
         ])
             ->where('id_pasien', Auth::id())
-            ->whereIn('status_antrian', ['menunggu', 'dilayani'])
+            ->whereIn('status_antrian', ['menunggu', 'dilayani', 'dilewati'])
             ->latest('id')
             ->first();
 
@@ -48,6 +48,31 @@ class DashboardController extends Controller
                 ->value('no_antrian');
         }
 
+        // Count waiting patients ahead in the current call order
+        $sisaAntrian = null;
+
+        if (
+            $antrianAktif &&
+            $antrianAktif->status_antrian === 'menunggu' &&
+            $antrianAktif->urutan_panggil !== null &&
+            $antrianAktif->tanggal_kunjungan !== null
+        ) {
+            $sisaAntrian = DaftarPoli::where('id_jadwal', $antrianAktif->id_jadwal)
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $antrianAktif->tanggal_kunjungan->toDateString()
+                )
+                ->where('status_antrian', 'menunggu')
+                ->where(function ($query) use ($antrianAktif) {
+                    $query->where('urutan_panggil', '<', $antrianAktif->urutan_panggil)
+                        ->orWhere(function ($query) use ($antrianAktif) {
+                            $query->where('urutan_panggil', $antrianAktif->urutan_panggil)
+                                ->where('id', '<', $antrianAktif->id);
+                        });
+                })
+                ->count();
+        }
+
         return view('pasien.dashboard', compact(
             'antrianAktif',
             'jadwals',
@@ -59,7 +84,7 @@ class DashboardController extends Controller
     {
         // Get the patient's active registration
         $antrianAktif = DaftarPoli::where('id_pasien', Auth::id())
-            ->whereIn('status_antrian', ['menunggu', 'dilayani'])
+            ->whereIn('status_antrian', ['menunggu', 'dilayani', 'dilewati'])
             ->latest('id')
             ->first();
 
@@ -90,15 +115,42 @@ class DashboardController extends Controller
                 ->value('no_antrian');
         }
 
+        // Count waiting patients ahead of the current patient
+        $sisaAntrian = null;
+
+        if (
+            $antrianAktif &&
+            $antrianAktif->status_antrian === 'menunggu' &&
+            $antrianAktif->urutan_panggil !== null &&
+            $antrianAktif->tanggal_kunjungan !== null
+        ) {
+            $sisaAntrian = DaftarPoli::where('id_jadwal', $antrianAktif->id_jadwal)
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $antrianAktif->tanggal_kunjungan->toDateString()
+                )
+                ->where('status_antrian', 'menunggu')
+                ->where(function ($query) use ($antrianAktif) {
+                    $query->where('urutan_panggil', '<', $antrianAktif->urutan_panggil)
+                        ->orWhere(function ($query) use ($antrianAktif) {
+                            $query->where('urutan_panggil', $antrianAktif->urutan_panggil)
+                                ->where('id', '<', $antrianAktif->id);
+                        });
+                })
+                ->count();
+        }
+
         return response()->json([
             'antrian_aktif' => $antrianAktif ? [
                 'id' => $antrianAktif->id,
                 'status' => $antrianAktif->status_antrian,
                 'no_antrian' => $antrianAktif->no_antrian,
+                'urutan_panggil' => $antrianAktif->urutan_panggil,
                 'id_jadwal' => $antrianAktif->id_jadwal,
             ] : null,
             'nomor_sedang_dilayani' => $nomorSedangDilayani,
             'antrian_dilayani' => $antrianDilayani,
+            'sisa_antrian' => $sisaAntrian,
         ]);
     }
 
