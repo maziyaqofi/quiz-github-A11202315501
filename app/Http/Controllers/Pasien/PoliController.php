@@ -88,16 +88,41 @@ class PoliController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            // Check for an unfinished registration across all poli
-            $pendaftaranAktif = DaftarPoli::where('id_pasien', Auth::id())
+            // Check for active registrations based on their scheduled end time
+            $pendaftaranAktif = DaftarPoli::with('jadwalPeriksa')
+                ->where('id_pasien', Auth::id())
                 ->whereIn('status_antrian', ['menunggu', 'dilayani', 'dilewati'])
-                ->exists();
+                ->get()
+                ->contains(function ($registration) {
+                    // An ongoing examination remains active
+                    if ($registration->status_antrian === 'dilayani') {
+                        return true;
+                    }
 
-            if ($pendaftaranAktif) {
-                throw ValidationException::withMessages([
-                    'id_jadwal' => 'Anda masih memiliki pendaftaran aktif. Selesaikan pemeriksaan sebelumnya sebelum mendaftar kembali.',
-                ]);
-            }
+                    // Treat incomplete schedule information as active
+                    if (
+                        $registration->tanggal_kunjungan === null ||
+                        $registration->jadwalPeriksa === null
+                    ) {
+                        return true;
+                    }
+
+                    // Determine when the scheduled examination ends
+                    $scheduledEnd = Carbon::parse(
+                        $registration->tanggal_kunjungan->toDateString()
+                        . ' '
+                        . $registration->jadwalPeriksa->jam_selesai
+                    );
+
+                    return now()->lessThan($scheduledEnd);
+                });
+
+                // Prevent multiple active registrations
+                if ($pendaftaranAktif) {
+                    throw ValidationException::withMessages([
+                        'id_jadwal' => 'Anda masih memiliki pendaftaran aktif. Selesaikan pemeriksaan sebelumnya sebelum mendaftar kembali.',
+                    ]);
+                }
 
             // Lock schedule row before allocating the queue number
             JadwalPeriksa::whereKey($jadwal->id)

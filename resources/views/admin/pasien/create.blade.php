@@ -99,11 +99,30 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1">
                         Password <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password" placeholder="Minimal 8 karakter..." class="w-full border-2 rounded-lg p-2
-                                  focus:border-primary focus:outline-none
-                                  @error('password') border-red-500 @enderror" required>
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Masukkan password..."
+                        minlength="8"
+                        autocomplete="new-password"
+                        class="w-full border-2 rounded-lg p-2
+                            focus:border-primary focus:outline-none
+                            @error('password') border-red-500 @enderror"
+                        required
+                    >
+
+                    {{-- Password requirements --}}
+                    <p class="text-xs text-slate-500 mt-2">
+                        Password minimal 8 karakter, mengandung huruf besar,
+                        huruf kecil, angka, dan simbol.
+                    </p>
+
+                    {{-- Validation error --}}
                     @error('password')
-                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        <p class="text-xs text-red-500 mt-1">
+                            {{ $message }}
+                        </p>
                     @enderror
                 </div>
 

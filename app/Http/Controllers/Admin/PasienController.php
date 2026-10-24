@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Exports\PasienExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\Rules\Password;
 
 class PasienController extends Controller
 {
@@ -39,7 +40,14 @@ class PasienController extends Controller
             'no_ktp' => 'required|string|max:16|unique:users,no_ktp',
             'no_hp' => 'required|string|max:15',
             'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => [
+                'required',
+                'string',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
         ]);
 
         User::create([
@@ -68,7 +76,14 @@ class PasienController extends Controller
             'no_ktp' => 'required|string|max:16|unique:users,no_ktp,' . $pasien->id,
             'no_hp' => 'required|string|max:15',
             'email' => 'required|string|email|unique:users,email,' . $pasien->id,
-            'password' => 'required|string|min:6',
+            'password' => [
+                'nullable',
+                'string',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
         ]);
 
         $updateData = [

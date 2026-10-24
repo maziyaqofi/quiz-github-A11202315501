@@ -34,6 +34,34 @@
                                     $jadwal = $pendaftaran->jadwalPeriksa;
                                     $dokter = $jadwal?->dokter;
                                     $sudahDiperiksa = $pendaftaran->periksas->isNotEmpty();
+
+                                    // Configure the queue status label and badge
+                                    $statusConfig = match ($pendaftaran->status_antrian) {
+                                        'menunggu' => [
+                                            'label' => 'Menunggu',
+                                            'class' => 'badge-warning',
+                                        ],
+                                        'dilayani' => [
+                                            'label' => 'Sedang Dilayani',
+                                            'class' => 'badge-info',
+                                        ],
+                                        'dilewati' => [
+                                            'label' => 'Dilewati',
+                                            'class' => 'badge-error',
+                                        ],
+                                        'selesai' => [
+                                            'label' => 'Sudah Diperiksa',
+                                            'class' => 'badge-success',
+                                        ],
+                                        'kedaluwarsa' => [
+                                            'label' => 'Kedaluwarsa',
+                                            'class' => 'badge-neutral',
+                                        ],
+                                        default => [
+                                            'label' => 'Tidak Diketahui',
+                                            'class' => 'badge-ghost',
+                                        ],
+                                    };
                                 @endphp
 
                                 <tr>
@@ -77,15 +105,9 @@
                                     </td>
 
                                     <td>
-                                        @if ($sudahDiperiksa)
-                                            <span class="badge badge-success text-white">
-                                                Sudah Diperiksa
-                                            </span>
-                                        @else
-                                            <span class="badge badge-warning">
-                                                Menunggu
-                                            </span>
-                                        @endif
+                                        <span class="badge {{ $statusConfig['class'] }}">
+                                            {{ $statusConfig['label'] }}
+                                        </span>
                                     </td>
 
                                     <td>

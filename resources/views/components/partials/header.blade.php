@@ -172,20 +172,22 @@
 
         <div class="text-right hidden sm:block">
             <div class="text-sm font-semibold leading-tight">
-                {{ auth()->user()->name ?? 'Pengguna' }}
+                {{ auth()->user()?->nama ?? 'Pengguna' }}
             </div>
+
             <div class="text-xs text-base-content/50 leading-tight">
-                {{ auth()->user()->role ?? 'Admin Sistem' }}
+                {{ ucfirst(auth()->user()?->role ?? 'Pengguna') }}
             </div>
         </div>
 
         <div class="avatar">
             <div class="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center">
                 <span class="text-sm font-semibold leading-none">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    {{ mb_strtoupper(mb_substr(auth()->user()?->nama ?? 'U', 0, 1)) }}
                 </span>
             </div>
         </div>
+
     </div>
 
 </header>

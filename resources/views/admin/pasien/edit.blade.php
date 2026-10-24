@@ -107,15 +107,32 @@
                 {{-- Password --}}
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">
-                        Password
+                        Password Baru (Opsional)
                     </label>
-                    <input type="password" name="password"
-                        placeholder="Kosongkan jika tidak ingin mengubah..."
-                        class="w-full px-4 py-2 rounded-lg border-2 border-slate-300 
-                               focus:border-primary focus:outline-none
-                               @error('password') border-red-500 @enderror">
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Kosongkan jika tidak ingin mengubah password..."
+                        minlength="8"
+                        autocomplete="new-password"
+                        class="w-full px-4 py-2 rounded-lg border-2 border-slate-300
+                            focus:border-primary focus:outline-none
+                            @error('password') border-red-500 @enderror"
+                    >
+
+                    {{-- Password requirements --}}
+                    <p class="text-xs text-slate-500 mt-2">
+                        Kosongkan jika tidak ingin mengubah password.
+                        Jika diisi, gunakan minimal 8 karakter yang mengandung
+                        huruf besar, huruf kecil, angka, dan simbol.
+                    </p>
+
+                    {{-- Validation error --}}
                     @error('password')
-                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        <p class="text-xs text-red-500 mt-1">
+                            {{ $message }}
+                        </p>
                     @enderror
                 </div>
 
