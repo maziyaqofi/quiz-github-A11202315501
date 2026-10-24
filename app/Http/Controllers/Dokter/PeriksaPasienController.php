@@ -20,48 +20,56 @@ class PeriksaPasienController extends Controller
     {
         $dokterId = Auth::id();
 
-        $daftarPasien = DaftarPoli::with(['pasien', 'jadwalPeriksa', 'periksas'])
+        // Retrieve only today's patient queue for the authenticated doctor
+        $daftarPasien = DaftarPoli::with([
+            'pasien',
+            'jadwalPeriksa',
+            'periksas',
+        ])
             ->whereHas('jadwalPeriksa', function ($query) use ($dokterId) {
                 $query->where('id_dokter', $dokterId);
             })
-            ->orderBy('no_antrian')
+            ->whereDate('tanggal_kunjungan', today())
+            ->orderBy('id_jadwal')
+            ->orderBy('urutan_panggil')
+            ->orderBy('id')
             ->get();
 
         return view('dokter.periksa-pasien.index', compact('daftarPasien'));
     }
 
     
-public function create($id)
-{
-    // Find the patient registration
-    $daftarPoli = DaftarPoli::with('jadwalPeriksa')
-        ->findOrFail($id);
+    public function create($id)
+    {
+        // Find the patient registration
+        $daftarPoli = DaftarPoli::with('jadwalPeriksa')
+            ->findOrFail($id);
 
-    // Verify that the registration belongs to the logged-in doctor
-    abort_unless(
-        (int) $daftarPoli->jadwalPeriksa->id_dokter === (int) Auth::id(),
-        403
-    );
+        // Verify that the registration belongs to the logged-in doctor
+        abort_unless(
+            (int) $daftarPoli->jadwalPeriksa->id_dokter === (int) Auth::id(),
+            403
+        );
 
-    // Only allow examinations for patients currently being served
-    if ($daftarPoli->status_antrian !== 'dilayani') {
-        throw ValidationException::withMessages([
-            'id_daftar_poli' => 'Pasien harus berstatus sedang dilayani sebelum pemeriksaan.',
-        ]);
+        // Only allow examinations for patients currently being served
+        if ($daftarPoli->status_antrian !== 'dilayani') {
+            throw ValidationException::withMessages([
+                'id_daftar_poli' => 'Pasien harus berstatus sedang dilayani sebelum pemeriksaan.',
+            ]);
+        }
+
+        // Prevent duplicate examinations
+        if ($daftarPoli->periksas()->exists()) {
+            throw ValidationException::withMessages([
+                'id_daftar_poli' => 'Pasien sudah diperiksa.',
+            ]);
+        }
+
+        // Retrieve available medicines
+        $obats = Obat::all();
+
+        return view('dokter.periksa-pasien.create', compact('obats', 'id'));
     }
-
-    // Prevent duplicate examinations
-    if ($daftarPoli->periksas()->exists()) {
-        throw ValidationException::withMessages([
-            'id_daftar_poli' => 'Pasien sudah diperiksa.',
-        ]);
-    }
-
-    // Retrieve available medicines
-    $obats = Obat::all();
-
-    return view('dokter.periksa-pasien.create', compact('obats', 'id'));
-}
     
     public function mulaiLayani($id)
     {
@@ -103,6 +111,13 @@ public function create($id)
                 ]);
             }
 
+            // Ensure the patient has a valid call order
+            if ($pendaftaran->urutan_panggil === null) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Urutan pemanggilan pasien belum tersedia.',
+                ]);
+            }
+
             // Prevent serving two patients on the same schedule and date
             $sedangDilayani = DaftarPoli::where('id_jadwal', $pendaftaran->id_jadwal)
                 ->whereDate(
@@ -115,6 +130,38 @@ public function create($id)
             if ($sedangDilayani) {
                 throw ValidationException::withMessages([
                     'antrian' => 'Masih ada pasien yang sedang dilayani pada jadwal ini.',
+                ]);
+            }
+
+            // Prevent serving patients out of the current call order
+            $antrianSebelumnya = DaftarPoli::where(
+                'id_jadwal',
+                $pendaftaran->id_jadwal
+            )
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $pendaftaran->tanggal_kunjungan->toDateString()
+                )
+                ->where('status_antrian', 'menunggu')
+                ->where(function ($query) use ($pendaftaran) {
+                    $query->where(
+                        'urutan_panggil',
+                        '<',
+                        $pendaftaran->urutan_panggil
+                    )
+                    ->orWhere(function ($query) use ($pendaftaran) {
+                        $query->where(
+                            'urutan_panggil',
+                            $pendaftaran->urutan_panggil
+                        )
+                        ->where('id', '<', $pendaftaran->id);
+                    });
+                })
+                ->exists();
+
+            if ($antrianSebelumnya) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Masih ada pasien dengan urutan pemanggilan lebih awal yang harus dilayani.',
                 ]);
             }
 
@@ -140,7 +187,176 @@ public function create($id)
             ->with('type', 'success');
     }
 
-    
+    public function lewati($id)
+    {
+        DB::transaction(function () use ($id) {
+
+            // Find registration and verify doctor ownership
+            $pendaftaran = DaftarPoli::with('jadwalPeriksa')
+                ->findOrFail($id);
+
+            abort_unless(
+                (int) $pendaftaran->jadwalPeriksa->id_dokter === (int) Auth::id(),
+                403
+            );
+
+            // Lock the schedule to synchronize queue operations
+            JadwalPeriksa::whereKey($pendaftaran->id_jadwal)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Lock and refresh registration data
+            $pendaftaran = DaftarPoli::whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Only allow skipping today's queue
+            if (
+                $pendaftaran->tanggal_kunjungan === null ||
+                !$pendaftaran->tanggal_kunjungan->isToday()
+            ) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Hanya antrean hari ini yang dapat dilewati.',
+                ]);
+            }
+
+            // Only waiting patients can be skipped
+            if ($pendaftaran->status_antrian !== 'menunggu') {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Hanya pasien yang sedang menunggu yang dapat dilewati.',
+                ]);
+            }
+
+            // Ensure the patient has a valid call order
+            if ($pendaftaran->urutan_panggil === null) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Urutan pemanggilan pasien belum tersedia.',
+                ]);
+            }
+
+            // Prevent skipping a patient while another is being served
+            $sedangDilayani = DaftarPoli::where('id_jadwal', $pendaftaran->id_jadwal)
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $pendaftaran->tanggal_kunjungan->toDateString()
+                )
+                ->where('status_antrian', 'dilayani')
+                ->exists();
+
+            if ($sedangDilayani) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Masih ada pasien yang sedang dilayani pada jadwal ini.',
+                ]);
+            }
+
+            // Check for waiting patients with an earlier call order
+            $antrianSebelumnya = DaftarPoli::where('id_jadwal', $pendaftaran->id_jadwal)
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $pendaftaran->tanggal_kunjungan->toDateString()
+                )
+                ->where('status_antrian', 'menunggu')
+                ->where(function ($query) use ($pendaftaran) {
+                    $query->where('urutan_panggil', '<', $pendaftaran->urutan_panggil)
+                        ->orWhere(function ($query) use ($pendaftaran) {
+                            $query->where('urutan_panggil', $pendaftaran->urutan_panggil)
+                                ->where('id', '<', $pendaftaran->id);
+                        });
+                })
+                ->exists();
+
+            if ($antrianSebelumnya) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Pasien ini belum mendapat giliran untuk dilewati.',
+                ]);
+            }
+
+            // Update queue status without changing the original queue number
+            $pendaftaran->update([
+                'status_antrian' => 'dilewati',
+            ]);
+
+        }, 3);
+
+        return redirect()
+            ->route('periksa-pasien.index')
+            ->with('message', 'Antrean pasien berhasil dilewati.')
+            ->with('type', 'success');
+    }
+
+    public function aktifkanKembali($id)
+    {
+        $antrian = DB::transaction(function () use ($id) {
+
+            // Find registration and verify doctor ownership
+            $pendaftaran = DaftarPoli::with('jadwalPeriksa')
+                ->findOrFail($id);
+
+            abort_unless(
+                (int) $pendaftaran->jadwalPeriksa->id_dokter === (int) Auth::id(),
+                403
+            );
+
+            // Lock the schedule to synchronize queue operations
+            JadwalPeriksa::whereKey($pendaftaran->id_jadwal)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Lock and refresh registration data
+            $pendaftaran = DaftarPoli::whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Only allow reactivation on the scheduled visit date
+            if (
+                $pendaftaran->tanggal_kunjungan === null ||
+                !$pendaftaran->tanggal_kunjungan->isToday()
+            ) {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Hanya antrean hari ini yang dapat diaktifkan kembali.',
+                ]);
+            }
+
+            // Only skipped patients can be reactivated
+            if ($pendaftaran->status_antrian !== 'dilewati') {
+                throw ValidationException::withMessages([
+                    'antrian' => 'Hanya antrean yang dilewati yang dapat diaktifkan kembali.',
+                ]);
+            }
+
+            // Get the highest call order for this schedule and date
+            $urutanTerakhir = DaftarPoli::where(
+                'id_jadwal',
+                $pendaftaran->id_jadwal
+            )
+                ->whereDate(
+                    'tanggal_kunjungan',
+                    $pendaftaran->tanggal_kunjungan->toDateString()
+                )
+                ->max('urutan_panggil') ?? 0;
+
+            // Move the patient to the end of the call order
+            $pendaftaran->update([
+                'status_antrian' => 'menunggu',
+                'urutan_panggil' => $urutanTerakhir + 1,
+            ]);
+
+            return $pendaftaran;
+
+        }, 3);
+
+        // Notify queue listeners after the transaction
+        QueueUpdated::dispatch(
+            (int) $antrian->id_jadwal,
+            $antrian->tanggal_kunjungan->toDateString()
+        );
+
+        return redirect()
+            ->route('periksa-pasien.index')
+            ->with('message', 'Pasien berhasil diaktifkan kembali ke antrean.')
+            ->with('type', 'success');
+    }
+
     public function store(Request $request)
     {
         // Validate examination data

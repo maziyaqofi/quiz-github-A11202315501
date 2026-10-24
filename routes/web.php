@@ -100,6 +100,14 @@ Route::middleware(['auth', 'role:dokter'])->prefix('dokter')->group(function () 
         
     Route::post('/periksa-pasien/{id}/mulai-layani', [PeriksaPasienController::class, 'mulaiLayani'])
         ->name('periksa-pasien.mulai-layani');
+
+    // Skip a patient who does not respond to the call
+    Route::post('/periksa-pasien/{id}/lewati', [PeriksaPasienController::class, 'lewati'])
+        ->name('periksa-pasien.lewati');
+
+    // Reactivate a previously skipped patient
+    Route::post('/periksa-pasien/{id}/aktifkan-kembali', [PeriksaPasienController::class, 'aktifkanKembali'])
+        ->name('periksa-pasien.aktifkan-kembali');
 });
 
 // Pasien Routes

@@ -90,7 +90,7 @@ class PoliController extends Controller
 
             // Check for an unfinished registration across all poli
             $pendaftaranAktif = DaftarPoli::where('id_pasien', Auth::id())
-                ->whereIn('status_antrian', ['menunggu', 'dilayani'])
+                ->whereIn('status_antrian', ['menunggu', 'dilayani', 'dilewati'])
                 ->exists();
 
             if ($pendaftaranAktif) {
@@ -104,10 +104,17 @@ class PoliController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Get the last queue number for this schedule and visit date
             $nomorTerakhir = DaftarPoli::where('id_jadwal', $jadwal->id)
                 ->whereDate('tanggal_kunjungan', $tanggalKunjungan->toDateString())
                 ->max('no_antrian') ?? 0;
 
+            // Get the last call order, including reactivated patients
+            $urutanTerakhir = DaftarPoli::where('id_jadwal', $jadwal->id)
+                ->whereDate('tanggal_kunjungan', $tanggalKunjungan->toDateString())
+                ->max('urutan_panggil') ?? 0;
+
+            // Assign a new queue number and call order
             DaftarPoli::create([
                 'id_pasien' => Auth::id(),
                 'id_jadwal' => $jadwal->id,
@@ -115,7 +122,9 @@ class PoliController extends Controller
                 'tanggal_kunjungan' => $tanggalKunjungan->toDateString(),
                 'status_antrian' => 'menunggu',
                 'no_antrian' => $nomorTerakhir + 1,
+                'urutan_panggil' => $urutanTerakhir + 1,
             ]);
+
         }, 3);
 
         return redirect()

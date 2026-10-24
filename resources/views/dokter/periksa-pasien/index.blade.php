@@ -7,7 +7,8 @@
             Periksa Pasien
         </h2>
         <p class="text-slate-500 mt-1">
-            Daftar pasien yang terdaftar untuk pemeriksaan.
+            Daftar antrean pemeriksaan hari ini,
+            {{ now()->translatedFormat('d F Y') }}.
         </p>
     </div>
 
@@ -40,6 +41,8 @@
                             <th class="px-6 py-4">Nama Pasien</th>
                             <th class="px-6 py-4">Keluhan</th>
                             <th class="px-6 py-4">Nomor Antrian</th>
+                            <th class="px-6 py-4">Urutan Panggil</th>
+                            <th class="px-6 py-4">Status</th>
                             <th class="px-6 py-4 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -66,6 +69,42 @@
                                     </span>
                                 </td>
 
+                                {{-- Current Call Order --}}
+                                <td class="px-6 py-4">
+                                    <span class="badge badge-primary badge-outline">
+                                        {{ $daftar->urutan_panggil ?? '-' }}
+                                    </span>
+                                </td>
+
+                                {{-- Queue Status --}}
+                                <td class="px-6 py-4">
+                                    @if($daftar->status_antrian === 'selesai' || $daftar->periksas->isNotEmpty())
+                                        <span class="badge badge-success">
+                                            Selesai
+                                        </span>
+
+                                    @elseif($daftar->status_antrian === 'dilayani')
+                                        <span class="badge badge-info">
+                                            Sedang Dilayani
+                                        </span>
+
+                                    @elseif($daftar->status_antrian === 'menunggu')
+                                        <span class="badge badge-warning">
+                                            Menunggu
+                                        </span>
+                                    
+                                    @elseif($daftar->status_antrian === 'dilewati')
+                                        <span class="badge badge-error badge-outline">
+                                            Dilewati
+                                        </span>
+
+                                    @else
+                                        <span class="badge badge-ghost">
+                                            Tidak Diketahui
+                                        </span>
+                                    @endif
+                                </td>
+
                                 <td class="px-6 py-4 text-right">
 
                                     @if($daftar->status_antrian === 'selesai' || $daftar->periksas->isNotEmpty())
@@ -86,17 +125,41 @@
                                         </a>
 
                                     @elseif($daftar->status_antrian === 'menunggu')
+                                        <div class="flex justify-end gap-2">
+                                            {{-- Start serving patient --}}
+                                            <form action="{{ route('periksa-pasien.mulai-layani', $daftar->id) }}"
+                                                method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-warning rounded-lg">
+                                                    <i class="fas fa-play"></i>
+                                                    Mulai Layani
+                                                </button>
+                                            </form>
 
-                                        {{-- Start serving the patient --}}
-                                        <form action="{{ route('periksa-pasien.mulai-layani', $daftar->id) }}"
+                                            {{-- Skip patient --}}
+                                            <form action="{{ route('periksa-pasien.lewati', $daftar->id) }}"
+                                                method="POST"
+                                                onsubmit="return confirm('Yakin ingin melewati antrean pasien ini?')">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline rounded-lg">
+                                                    <i class="fas fa-forward"></i>
+                                                    Lewati
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                    @elseif($daftar->status_antrian === 'dilewati')
+                                        {{-- Reactivate skipped patient --}}
+                                        <form action="{{ route('periksa-pasien.aktifkan-kembali', $daftar->id) }}"
                                             method="POST"
                                             class="inline-block">
                                             @csrf
-
                                             <button type="submit"
-                                                    class="btn btn-sm btn-warning rounded-lg px-4">
-                                                <i class="fas fa-play mr-1"></i>
-                                                Mulai Layani
+                                                    class="btn btn-sm btn-info rounded-lg">
+                                                <i class="fas fa-rotate-right"></i>
+                                                Aktifkan Kembali
                                             </button>
                                         </form>
 
@@ -113,9 +176,9 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-14 text-slate-400">
+                                <td colspan="7" class="text-center py-14 text-slate-400">
                                     <i class="fas fa-user-doctor text-3xl mb-3 block"></i>
-                                    Belum ada pasien yang terdaftar.
+                                    Belum ada antrean pasien untuk hari ini.
                                 </td>
                             </tr>
                         @endforelse

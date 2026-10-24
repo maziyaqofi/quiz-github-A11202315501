@@ -13,6 +13,7 @@ class DaftarPoli extends Model
         'id_jadwal',
         'keluhan',
         'no_antrian',
+        'urutan_panggil',
         'tanggal_kunjungan',
         'status_antrian',
     ];
