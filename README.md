@@ -81,7 +81,7 @@ pada halaman GitHub.
 
 **Login**
 
-![Halaman login](quiz-github-A11202315501/public/images/screnshoots/login.png)
+![Halaman login](public/images/screnshoots/login.png)
 
 ### Halaman Pasien
 
