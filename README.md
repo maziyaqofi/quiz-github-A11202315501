@@ -1,5 +1,3 @@
-# GitHub Quiz
-
 ## Student Information
 
 **Name:** Maziya Ats Tsaqofi  
