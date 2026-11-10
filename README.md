@@ -1,11 +1,23 @@
+# GitHub Quiz
+
+## Student Information
+
+**Name:** Maziya Ats Tsaqofi  
+**Student ID:** A11.2023.15501  
+**Class:** DEV-01  
+**Course:** Bengkel Coding  
+
+## Description
+
+This repository was created to fulfill the GitHub practice assignment for the Bengkel Coding course. It also contains the Laravel Polyclinic project developed as part of the Bengkel Coding learning activities.
+
+The project is used to practice Laravel development, database management, authentication, multi-user roles, routing, models, migrations, and other web development concepts.
+
 # Poliklinik App
 
 Aplikasi manajemen poliklinik berbasis web yang dikembangkan menggunakan
 Laravel. Aplikasi ini menyediakan alur pengelolaan layanan poliklinik
 untuk tiga jenis pengguna: **Admin**, **Dokter**, dan **Pasien**.
-
-Repository:
-[maziyaqofi/quiz-github-A11202315501](https://github.com/maziyaqofi/quiz-github-A11202315501)
 
 ## Daftar Isi
 
