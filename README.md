@@ -81,7 +81,7 @@ pada halaman GitHub.
 
 **Login**
 
-![Halaman login](public/images/screnshoots/login.png)
+![Halaman login](poliklinik-app/public/images/screnshoots/login.png)
 
 ### Halaman Pasien
 
