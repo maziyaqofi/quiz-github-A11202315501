@@ -4,15 +4,26 @@ php artisan serve
 php artisan reverb:start --debug
 npm run dev
 
+=== DUMMY DATA ===
+
 Data Accounts Admin
 --------------------
 admin@gmail.com --> admin
 
-
 Data Accounts Dokter
 --------------------
-
+dokter@gmail.com --> dokter
+nadeer@gmail.com --> dokter
+ahmad@gmail.com --> dokter
+lala@gmail.com --> dokter
 
 Data Accounts Pasien
 --------------------
 pasien@gmail.com --> Pasienpass2026!
+ali@gmail.com --> pasien
+untung@gmail.com --> Pasienuntung2026!
+bejo@gmail.com --> Passbejo2026!
+nila@gmail.com --> Pasiennila2026!
+laila@gmail.com --> Pasienlaila2026!
+ina@gmail.com --> Pasienina2026!
+
